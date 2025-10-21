@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard - Meal Magic</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    .header-buttons {
+      padding: 1.5rem 3rem 0 0;
+    }
+    .btn-view-orders {
+      background-color: white;
+      border: 1px solid #dc3545;
+      color: #dc3545;
+      font-weight: 500;
+      padding: 0.375rem 1rem;
+    }
+    .btn-logout {
+      background-color: #E55B33;
+      border-color: #E55B33;
+      color: white;
+      font-weight: 500;
+      padding: 0.375rem 1.5rem;
+    }
+    .main-title {
+      color: #E55B33;
+      font-weight: bold;
+      margin-top: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    .cart-info {
+      color: #6c757d;
+      margin-bottom: 2.5rem;
+    }
+    .dish-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      width: 210px;
+      transition: transform 0.5s ease-in-out;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .dish-card:hover {
+      transform: perspective(1000px) rotateY(50deg);
+    }
+    .dish-card img {
+      width: 150px;
+      height: 120px;
+      object-fit: contain;
+      margin-bottom: 1rem;
+    }
+    .dish-card h5 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .dish-card p {
+      color: #28a745;
+      font-weight: bold;
+      font-size: 1rem;
+      margin: 0;
+    }
+    #logoutConfirmationModal .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 5px 15px rgba(0,0,0,.2);
+    }
+    #logoutConfirmationModal .modal-body {
+      padding: 2rem;
+      font-size: 1rem;
+      color: #333;
+    }
+    #logoutConfirmationModal .modal-footer {
+      border-top: none;
+      justify-content: center;
+      padding-bottom: 1.5rem;
+    }
+    #logoutConfirmationModal .btn {
+      font-weight: 500;
+      padding: 0.5rem 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-buttons d-flex justify-content-end">
+    <button class="btn btn-view-orders me-2">View Orders</button>
+    <button class="btn btn-logout" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="container text-center">
+    <h1 class="main-title">Welcome to Meal Magic Menu</h1>
+    <p class="cart-info">
+      <i class="fas fa-shopping-cart"></i> Dishes in Cart:
+      <span id="cart-count" style="color: #E55B33; font-weight: bold;">0</span>
+    </p>
+    
+    <div class="mb-4">
+      <a href="orders.html" class="btn btn-primary me-2">
+        <i class="fas fa-shopping-cart"></i> View Cart
+      </a>
+      <a href="order-history.html" class="btn btn-outline-primary">
+        <i class="fas fa-history"></i> Order History
+      </a>
+    </div>
+
+    <div id="dishes-container" class="d-flex justify-content-center flex-wrap" style="gap: 2rem;"></div>
+  </div>
+
+  <div class="modal fade" id="logoutConfirmationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center">
+          Are you sure you want to logout?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="confirmLogout">Yes, Logout</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const cartCountElement = document.getElementById('cart-count');
+    let itemsInCart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    // Update cart count (total items, not unique items)
+    const totalItems = itemsInCart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    cartCountElement.textContent = totalItems;
+
+    fetch('http://localhost:3001/dish/getAllDishes')
+      .then(res => res.json())
+      .then(dishes => {
+        const container = document.getElementById('dishes-container');
+        // Filter to show only available dishes
+        const availableDishes = dishes.filter(dish => dish.isAvailable);
+        
+        availableDishes.forEach(dish => {
+          const card = document.createElement('div');
+          card.classList.add('dish-card');
+          card.setAttribute('data-price', dish.price);
+          card.innerHTML = `
+            <img src="${dish.coverImage}" alt="${dish.dishName}">
+            <h5>${dish.dishName}</h5>
+            <p>$${dish.price.toFixed(2)}</p>
+          `;
+          card.addEventListener('click', () => {
+            // Check if dish already exists in cart
+            const existingItem = itemsInCart.find(item => item.dishId === dish._id);
+            
+            if (existingItem) {
+              // If exists, increment quantity
+              existingItem.quantity += 1;
+            } else {
+              // If new, add with quantity 1
+              itemsInCart.push({ 
+                dishId: dish._id,
+                name: dish.dishName, 
+                price: dish.price,
+                quantity: 1,
+                image: dish.coverImage
+              });
+            }
+            
+            localStorage.setItem("cart", JSON.stringify(itemsInCart));
+            
+            // Update cart count (total items, not unique items)
+            const totalItems = itemsInCart.reduce((sum, item) => sum + item.quantity, 0);
+            cartCountElement.textContent = totalItems;
+          });
+          container.appendChild(card);
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching dishes:', error);
+        const container = document.getElementById('dishes-container');
+        container.innerHTML = '<p class="text-center text-danger">Failed to load dishes. Please try again later.</p>';
+      });
+
+    document.querySelector(".btn-view-orders").addEventListener("click", () => {
+      window.location.href = "orders.html";
+    });
+
+    const logoutButton = document.getElementById('logoutBtn');
+    const logoutModalElement = document.getElementById('logoutConfirmationModal');
+    const logoutModal = new bootstrap.Modal(logoutModalElement);
+
+    logoutButton.addEventListener('click', function () {
+      logoutModal.show();
+    });
+
+    document.getElementById("confirmLogout").addEventListener("click", () => {
+      localStorage.removeItem("cart");
+      window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>
+
+

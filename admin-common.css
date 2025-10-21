@@ -1,0 +1,34 @@
+/* Shared admin styles */
+
+body {
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  color: #e74c3c !important;
+  font-weight: bold;
+}
+
+.logout-btn {
+  background-color: #e74c3c;
+  border: none;
+}
+
+.table thead {
+  background-color: #e74c3c;
+  color: white;
+}
+
+/* Utility spacing for top nav buttons */
+.top-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+/* Active button emphasis */
+.btn-outline-primary.active,
+.btn-outline-secondary.active {
+  color: #fff;
+}
