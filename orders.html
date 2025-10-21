@@ -174,7 +174,16 @@
         return;
       }
 
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      let userData = {};
+      try {
+        const userString = localStorage.getItem('user');
+        if (userString && userString !== 'undefined' && userString !== 'null') {
+          userData = JSON.parse(userString);
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        userData = {};
+      }
       if (!userData.id) {
         showModal(
           '<i class="fas fa-exclamation-triangle me-2 text-danger"></i>Login Required',
@@ -236,7 +245,16 @@
         price: item.price
       }));
 
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      let userData = {};
+      try {
+        const userString = localStorage.getItem('user');
+        if (userString && userString !== 'undefined' && userString !== 'null') {
+          userData = JSON.parse(userString);
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        userData = {};
+      }
 
       fetch('http://localhost:3001/order/addOrder', {
         method: 'POST',
